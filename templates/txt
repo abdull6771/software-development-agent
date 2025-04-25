@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Development Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #e6f4f1, #ffd4cc);
+            min-height: 100vh;
+        }
+        .stage-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .stage-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #FF6F61;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .input-card {
+            animation: fadeIn 0.7s ease-in-out;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800">
+    <header class="bg-teal-700 text-white py-8 shadow-md">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl md:text-4xl font-bold">Software Development Agent</h1>
+            <p class="mt-2 text-lg">Craft robust software solutions with AI-driven precision.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-12">
+        <!-- Prompt Input Section -->
+        <section class="input-card max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8 mb-12">
+            <h2 class="text-2xl font-semibold text-teal-800 mb-4">Submit Your Project Idea</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="text" id="promptInput" 
+                       class="flex-grow p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500" 
+                       placeholder="e.g., Build a Flask API for user management with RBAC">
+                <button id="submitPrompt" 
+                        class="bg-coral-500 text-white px-6 py-3 rounded-lg hover:bg-coral-600 transition duration-300 flex items-center">
+                    <span>Generate</span>
+                    <div id="spinner" class="spinner ml-2"></div>
+                </button>
+            </div>
+        </section>
+
+        <!-- Stages Grid -->
+        <section id="stages" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Stage 1: Requirement Clarification -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <img src="" alt="Requirements Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800">Requirement Clarification</h3>
+                </div>
+                <p id="requirementsOutput" class="text-gray-600 text-sm">Enter a prompt to see clarified requirements...</p>
+            </div>
+
+            <!-- Stage 2: System Design -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=1765&format=png&color=000000" alt="Design Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800">System Design</h3>
+                </div>
+                <p id="designOutput" class="text-gray-600 text-sm">Enter a prompt to see system architecture...</p>
+            </div>
+
+            <!-- Stage 3: Code Generation -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=37927&format=png&color=000000" alt="Code Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800">Code Generation</h3>
+                </div>
+                <pre id="codeOutput" class="text-gray-600 text-sm bg-gray-100 p-4 rounded-lg overflow-auto">Enter a prompt to see generated code...</pre>
+            </div>
+
+            <!-- Stage 4: Test Case Generation -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=26034&format=png&color=000000" alt="Test Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800">Test Case Generation</h3>
+                </div>
+                <pre id="testOutput" class="text-gray-600 text-sm bg-gray-100 p-4 rounded-lg overflow-auto">Enter a prompt to see test cases...</pre>
+            </div>
+
+            <!-- Stage 5: Code Review -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=40902&format=png&color=000000" alt="Review Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800">Code Review</h3>
+                </div>
+                <p id="reviewOutput" class="text-gray-600 text-sm">Enter a prompt to see code review comments...</p>
+            </div>
+
+            <!-- Stage 6: Documentation -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=2957&format=png&color=000000" alt="Document Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800">Documentation</h3>
+                </div>
+                <p id="docOutput" class="text-gray-600 text-sm">Enter a prompt to see documentation...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p>© 2025 Software Development Agent by Nabafat.AI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('submitPrompt').addEventListener('click', async () => {
+            const prompt = document.getElementById('promptInput').value;
+            if (!prompt) {
+                Toastify({
+                    text: "Please enter a project prompt!",
+                    duration: 3000,
+                    style: { background: "linear-gradient(to right, #e53e3e, #c53030)" }
+                }).showToast();
+                return;
+            }
+
+            const spinner = document.getElementById('spinner');
+            spinner.style.display = 'block';
+            document.getElementById('submitPrompt').disabled = true;
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_prompt: prompt })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    document.getElementById('requirementsOutput').innerText = result.clarified_requirements || 'No output';
+                    document.getElementById('designOutput').innerText = result.system_design || 'No output';
+                    document.getElementById('codeOutput').innerText = result.source_code || 'No output';
+                    document.getElementById('testOutput').innerText = result.test_cases || 'No output';
+                    document.getElementById('reviewOutput').innerText = result.review_comments || 'No output';
+                    document.getElementById('docOutput').innerText = result.documentation || 'No output';
+
+                    Toastify({
+                        text: "Outputs generated successfully!",
+                        duration: 3000,
+                        style: { background: "linear-gradient(to right, #008080, #00a3a3)" }
+                    }).showToast();
+                } else {
+                    throw new Error(result.message || 'Failed to generate outputs');
+                }
+            } catch (error) {
+                Toastify({
+                    text: `Error: ${error.message}`,
+                    duration: 3000,
+                    style: { background: "linear-gradient(to right, #e53e3e, #c53030)" }
+                }).showToast();
+            } finally {
+                spinner.style.display = 'none';
+                document.getElementById('submitPrompt').disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

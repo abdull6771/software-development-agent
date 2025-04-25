@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Development Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.12/marked.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #e6f4f1, #ffd4cc);
+            min-height: 100vh;
+        }
+        .stage-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .stage-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #FF6F61;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        .stage-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #008080;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .input-card {
+            animation: fadeIn 0.7s ease-in-out;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-toggle:checked ~ .accordion-content {
+            max-height: 800px; /* Increased for longer outputs */
+            overflow: auto;
+        }
+        .accordion-toggle:checked ~ .accordion-label .chevron {
+            transform: rotate(180deg);
+        }
+        .markdown-body {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            color: #008080;
+        }
+        .markdown-body ul, .markdown-body ol {
+            margin-left: 1.5rem;
+        }
+        .markdown-body code {
+            background-color: #f1f1f1;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .markdown-body pre {
+            background-color: #f1f1f1;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800">
+    <header class="bg-teal-700 text-white py-8 shadow-md">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl md:text-4xl font-bold">Software Development Agent</h1>
+            <p class="mt-2 text-lg">Craft robust software solutions with AI-driven precision.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-12">
+        <!-- Prompt Input Section -->
+        <section class="input-card max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8 mb-12">
+            <h2 class="text-2xl font-semibold text-teal-800 mb-4">Submit Your Project Idea</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="text" id="promptInput" 
+                       class="flex-grow p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500" 
+                       placeholder="e.g., Build a Flask API for user management with RBAC"
+                       aria-label="Project prompt input">
+                <button id="submitPrompt" 
+                        class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition duration-300 flex items-center"
+                        aria-label="Generate project outputs">
+                    <span>Generate</span>
+                    <div id="spinner" class="spinner ml-2"></div>
+                </button>
+                <button id="clearResults" 
+                        class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition duration-300"
+                        aria-label="Clear results">
+                    Clear
+                </button>
+                <button id="downloadOutputs" 
+                        class="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition duration-300 hidden"
+                        aria-label="Download outputs as ZIP">
+                    Download Outputs
+                </button>
+            </div>
+        </section>
+
+        <!-- Stages Grid -->
+        <section id="stages" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Stage 1: Requirement Clarification -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <input type="checkbox" id="requirementsToggle" class="accordion-toggle hidden">
+                <label for="requirementsToggle" class="accordion-label flex items-center cursor-pointer mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=Q0M3lyvPv8_2&format=png&color=000000" alt="Requirements Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800 flex-grow">Requirement Clarification</h3>
+                    <div id="requirementsSpinner" class="stage-spinner mr-2"></div>
+                    <svg class="chevron w-6 h-6 text-teal-800 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </label>
+                <div class="accordion-content">
+                    <div id="requirementsOutput" class="markdown-body text-gray-600 text-sm">Enter a prompt to see clarified requirements...</div>
+                    <button class="copy-btn bg-teal-600 text-white px-4 py-2 rounded-lg mt-4 hover:bg-teal-700" data-target="requirementsOutput" aria-label="Copy requirements to clipboard">Copy to Clipboard</button>
+                </div>
+            </div>
+
+            <!-- Stage 2: System Design -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <input type="checkbox" id="designToggle" class="accordion-toggle hidden">
+                <label for="designToggle" class="accordion-label flex items-center cursor-pointer mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=1765&format=png&color=000000"alt="Design Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800 flex-grow">System Design</h3>
+                    <div id="designSpinner" class="stage-spinner mr-2"></div>
+                    <svg class="chevron w-6 h-6 text-teal-800 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </label>
+                <div class="accordion-content">
+                    <div id="designOutput" class="markdown-body text-gray-600 text-sm">Enter a prompt to see system architecture...</div>
+                    <button class="copy-btn bg-teal-600 text-white px-4 py-2 rounded-lg mt-4 hover:bg-teal-700" data-target="designOutput" aria-label="Copy design to clipboard">Copy to Clipboard</button>
+                </div>
+            </div>
+
+            <!-- Stage 3: Code Generation -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <input type="checkbox" id="codeToggle" class="accordion-toggle hidden">
+                <label for="codeToggle" class="accordion-label flex items-center cursor-pointer mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=26034&format=png&color=000000" alt="Code Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800 flex-grow">Code Generation</h3>
+                    <div id="codeSpinner" class="stage-spinner mr-2"></div>
+                    <svg class="chevron w-6 h-6 text-teal-800 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </label>
+                <div class="accordion-content">
+                    <pre><code id="codeOutput" class="language-python text-sm">Enter a prompt to see generated code...</code></pre>
+                    <button class="copy-btn bg-teal-600 text-white px-4 py-2 rounded-lg mt-4 hover:bg-teal-700" data-target="codeOutput" aria-label="Copy code to clipboard">Copy to Clipboard</button>
+                </div>
+            </div>
+
+            <!-- Stage 4: Test Case Generation -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <input type="checkbox" id="testToggle" class="accordion-toggle hidden">
+                <label for="testToggle" class="accordion-label flex items-center cursor-pointer mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=26034&format=png&color=000000" alt="Test Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800 flex-grow">Test Case Generation</h3>
+                    <div id="testSpinner" class="stage-spinner mr-2"></div>
+                    <svg class="chevron w-6 h-6 text-teal-800 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </label>
+                <div class="accordion-content">
+                    <pre><code id="testOutput" class="language-python text-sm">Enter a prompt to see test cases...</code></pre>
+                    <button class="copy-btn bg-teal-600 text-white px-4 py-2 rounded-lg mt-4 hover:bg-teal-700" data-target="testOutput" aria-label="Copy test cases to clipboard">Copy to Clipboard</button>
+                </div>
+            </div>
+
+            <!-- Stage 5: Code Review -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <input type="checkbox" id="reviewToggle" class="accordion-toggle hidden">
+                <label for="reviewToggle" class="accordion-label flex items-center cursor-pointer mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=40902&format=png&color=000000" alt="Review Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800 flex-grow">Code Review</h3>
+                    <div id="reviewSpinner" class="stage-spinner mr-2"></div>
+                    <svg class="chevron w-6 h-6 text-teal-800 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </label>
+                <div class="accordion-content">
+                    <div id="reviewOutput" class="markdown-body text-gray-600 text-sm">Enter a prompt to see code review comments...</div>
+                    <button class="copy-btn bg-teal-600 text-white px-4 py-2 rounded-lg mt-4 hover:bg-teal-700" data-target="reviewOutput" aria-label="Copy review to clipboard">Copy to Clipboard</button>
+                </div>
+            </div>
+
+            <!-- Stage 6: Documentation -->
+            <div class="stage-card bg-white rounded-xl shadow-md p-6">
+                <input type="checkbox" id="docToggle" class="accordion-toggle hidden">
+                <label for="docToggle" class="accordion-label flex items-center cursor-pointer mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=2957&format=png&color=000000" alt="Document Icon" class="w-10 h-10 mr-3">
+                    <h3 class="text-xl font-semibold text-teal-800 flex-grow">Documentation</h3>
+                    <div id="docSpinner" class="stage-spinner mr-2"></div>
+                    <svg class="chevron w-6 h-6 text-teal-800 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </label>
+                <div class="accordion-content">
+                    <div id="docOutput" class="markdown-body text-gray-600 text-sm">Enter a prompt to see documentation...</div>
+                    <button class="copy-btn bg-teal-600 text-white px-4 py-2 rounded-lg mt-4 hover:bg-teal-700" data-target="docOutput" aria-label="Copy documentation to clipboard">Copy to Clipboard</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p>© 2025 Software Development Agent by Nabafat.AI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Render markdown for text-based outputs
+        function renderMarkdown(elementId, content) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = marked.parse(content || 'No output received');
+            console.log(`Rendered markdown for ${elementId}:`, content);
+        }
+
+        // Show/hide stage spinner
+        function toggleStageSpinner(stageId, show) {
+            const spinner = document.getElementById(`${stageId}Spinner`);
+            spinner.style.display = show ? 'block' : 'none';
+        }
+
+        // Handle form submission for Generate button
+        document.getElementById('submitPrompt').addEventListener('click', async () => {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) {
+                Toastify({
+                    text: "Please enter a valid project prompt!",
+                    duration: 3000,
+                    style: { background: "linear-gradient(to right, #e53e3e, #c53030)" }
+                }).showToast();
+                console.warn("Empty prompt entered");
+                return;
+            }
+
+            const spinner = document.getElementById('spinner');
+            const submitButton = document.getElementById('submitPrompt');
+            const downloadButton = document.getElementById('downloadOutputs');
+            spinner.style.display = 'block';
+            submitButton.disabled = true;
+
+            // Show spinners for all stages
+            ['requirements', 'design', 'code', 'test', 'review', 'doc'].forEach(stage => {
+                toggleStageSpinner(stage, true);
+            });
+
+            Toastify({
+                text: "Generating outputs, please wait...",
+                duration: 3000,
+                style: { background: "linear-gradient(to right, #008080, #00a3a3)" }
+            }).showToast();
+
+            try {
+                console.log("Sending POST request to /generate with prompt:", prompt);
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_prompt: prompt })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log("Received response:", result);
+
+                // Render outputs
+                renderMarkdown('requirementsOutput', result.clarified_requirements);
+                renderMarkdown('designOutput', result.system_design);
+                document.getElementById('codeOutput').innerText = result.source_code || 'No code generated';
+                Prism.highlightElement(document.getElementById('codeOutput'));
+                document.getElementById('testOutput').innerText = result.test_cases || 'No test cases generated';
+                Prism.highlightElement(document.getElementById('testOutput'));
+                renderMarkdown('reviewOutput', result.review_comments);
+                renderMarkdown('docOutput', result.documentation);
+
+                // Auto-expand all accordions
+                document.querySelectorAll('.accordion-toggle').forEach(toggle => {
+                    toggle.checked = true;
+                });
+
+                // Show download button
+                downloadButton.classList.remove('hidden');
+
+                // Store results for download
+                downloadButton.dataset.results = JSON.stringify(result);
+
+                Toastify({
+                    text: "Outputs generated successfully!",
+                    duration: 3000,
+                    style: { background: "linear-gradient(to right, #008080, #00a3a3)" }
+                }).showToast();
+            } catch (error) {
+                console.error("Error during generation:", error);
+                Toastify({
+                    text: `Error: ${error.message}. Check console for details.`,
+                    duration: 5000,
+                    style: { background: "linear-gradient(to right, #e53e3e, #c53030)" }
+                }).showToast();
+
+                // Fallback: Display placeholder outputs
+                renderMarkdown('requirementsOutput', 'Failed to generate requirements. Please try again.');
+                renderMarkdown('designOutput', 'Failed to generate design. Please try again.');
+                document.getElementById('codeOutput').innerText = 'Failed to generate code. Please try again.';
+                Prism.highlightElement(document.getElementById('codeOutput'));
+                document.getElementById('testOutput').innerText = 'Failed to generate test cases. Please try again.';
+                Prism.highlightElement(document.getElementById('testOutput'));
+                renderMarkdown('reviewOutput', 'Failed to generate review. Please try again.');
+                renderMarkdown('docOutput', 'Failed to generate documentation. Please try again.');
+            } finally {
+                spinner.style.display = 'none';
+                submitButton.disabled = false;
+                // Hide stage spinners
+                ['requirements', 'design', 'code', 'test', 'review', 'doc'].forEach(stage => {
+                    toggleStageSpinner(stage, false);
+                });
+            }
+        });
+
+        // Clear results
+        document.getElementById('clearResults').addEventListener('click', () => {
+            renderMarkdown('requirementsOutput', 'Enter a prompt to see clarified requirements...');
+            renderMarkdown('designOutput', 'Enter a prompt to see system architecture...');
+            document.getElementById('codeOutput').innerText = 'Enter a prompt to see generated code...';
+            Prism.highlightElement(document.getElementById('codeOutput'));
+            document.getElementById('testOutput').innerText = 'Enter a prompt to see test cases...';
+            Prism.highlightElement(document.getElementById('testOutput'));
+            renderMarkdown('reviewOutput', 'Enter a prompt to see code review comments...');
+            renderMarkdown('docOutput', 'Enter a prompt to see documentation...');
+            document.getElementById('promptInput').value = '';
+            document.querySelectorAll('.accordion-toggle').forEach(toggle => toggle.checked = false);
+            document.getElementById('downloadOutputs').classList.add('hidden');
+            Toastify({
+                text: "Results cleared!",
+                duration: 3000,
+                style: { background: "linear-gradient(to right, #008080, #00a3a3)" }
+            }).showToast();
+        });
+
+        // Copy to clipboard
+        document.querySelectorAll('.copy-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-target');
+                const content = document.getElementById(targetId).innerText;
+                navigator.clipboard.writeText(content).then(() => {
+                    Toastify({
+                        text: "Copied to clipboard!",
+                        duration: 2000,
+                        style: { background: "linear-gradient(to right, #008080, #00a3a3)" }
+                    }).showToast();
+                }).catch(() => {
+                    Toastify({
+                        text: "Failed to copy!",
+                        duration: 2000,
+                        style: { background: "linear-gradient(to right, #e53e3e, #c53030)" }
+                    }).showToast();
+                });
+            });
+        });
+
+        // Download outputs as ZIP
+        document.getElementById('downloadOutputs').addEventListener('click', () => {
+            const results = JSON.parse(document.getElementById('downloadOutputs').dataset.results || '{}');
+            const zip = new JSZip();
+            zip.file('requirements.md', results.clarified_requirements || 'No requirements generated');
+            zip.file('design.md', results.system_design || 'No design generated');
+            zip.file('code.py', results.source_code || 'No code generated');
+            zip.file('tests.py', results.test_cases || 'No test cases generated');
+            zip.file('review.md', results.review_comments || 'No review generated');
+            zip.file('documentation.md', results.documentation || 'No documentation generated');
+            zip.generateAsync({ type: 'blob' }).then(blob => {
+                saveAs(blob, 'software_development_outputs.zip');
+                Toastify({
+                    text: "Outputs downloaded as ZIP!",
+                    duration: 3000,
+                    style: { background: "linear-gradient(to right, #008080, #00a3a3)" }
+                }).showToast();
+            }).catch(() => {
+                Toastify({
+                    text: "Failed to download outputs!",
+                    duration: 3000,
+                    style: { background: "linear-gradient(to right, #e53e3e, #c53030)" }
+                }).showToast();
+            });
+        });
+    </script>
+</body>
+</html>
