@@ -1,15 +1,14 @@
 ```markdown
-# Software Development Agent
+Software Development Agent
 
-The **Software Development Agent** is an AI-powered web application that streamlines software development by generating project requirements, system designs, code, test cases, code reviews, and documentation. Built with **Flask**, **LangGraph**, and the **Grok LLM** (via LangChain-Groq), it provides a user-friendly interface to input project prompts and view AI-generated outputs in real time.
+The Software Development Agent is an AI-powered web application that streamlines software development by generating project requirements, system designs, code, test cases, code reviews, and documentation. Built with Flask, LangGraph, and the **Grok LLM** (via LangChain-Groq), it provides a user-friendly interface to input project prompts and view AI-generated outputs in real time.
 
-Developed by **Nabafat.AI**, this tool is ideal for developers, startups, and educators looking to accelerate prototyping and learning.
+Developed by Nabafat.AI, this tool is ideal for developers, startups, and educators looking to accelerate prototyping and learning.
 
----
 
-## 🚀 Features
+ 🚀 Features
 
-- **Multi-Stage Workflow:** Generates six stages of software development:
+- Multi-Stage Workflow: Generates six stages of software development:
   - Requirement Clarification
   - System Design
   - Code Generation (rendered as markdown)
@@ -17,32 +16,32 @@ Developed by **Nabafat.AI**, this tool is ideal for developers, startups, and ed
   - Code Review with security feedback
   - Documentation
 
-- **Real-Time Streaming:** Outputs stream stage-by-stage using Server-Sent Events (SSE).
+- Real-Time Streaming: Outputs stream stage-by-stage using Server-Sent Events (SSE).
 
-- **Editable Outputs:** Edit and regenerate individual stage outputs with a user-friendly interface.
+- Editable Outputs: Edit and regenerate individual stage outputs with a user-friendly interface.
 
-- **Prompt History:** Stores and recalls recent prompts via a dropdown.
+- Prompt History: Stores and recalls recent prompts via a dropdown.
 
-- **Dark Mode:** Toggle between light and dark themes for better accessibility.
+- Dark Mode: Toggle between light and dark themes for better accessibility.
 
-- **Downloadable Outputs:** Export all outputs as a ZIP file.
+- Downloadable Outputs: Export all outputs as a ZIP file.
 
-- **Security Feedback:** Automatically scans generated code for common vulnerabilities (e.g., `eval()`, hardcoded secrets).
+- Security Feedback: Automatically scans generated code for common vulnerabilities (e.g., `eval()`, hardcoded secrets).
 
-- **Responsive UI:** Built with Tailwind CSS, featuring a teal, coral, and dark gray theme with a green "Generate" button.
+- Responsive UI: Built with Tailwind CSS, featuring a teal, coral, and dark gray theme with a green "Generate" button.
 
 ---
 
 ## 📦 Prerequisites
 
-- **Python:** 3.8 or higher  
-- **Git:** For cloning and version control  
-- **Groq API Key:** Obtain from [Groq](https://console.groq.com/) for LLM access  
-- **Node.js:** Optional, for local development with Tailwind CSS (if modifying frontend)
+- Python: 3.8 or higher  
+- Git: For cloning and version control  
+- Groq API Key:  Obtain from [Groq](https://console.groq.com/) for LLM access  
+- Node.js: Optional, for local development with Tailwind CSS (if modifying frontend)
 
 ---
 
-## 🛠 Installation
+🛠 Installation
 
 ### 1. Clone the Repository
 
