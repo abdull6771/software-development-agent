@@ -1,4 +1,3 @@
-```markdown
 Software Development Agent
 
 The Software Development Agent is an AI-powered web application that streamlines software development by generating project requirements, system designs, code, test cases, code reviews, and documentation. Built with Flask, LangGraph, and the **Grok LLM** (via LangChain-Groq), it provides a user-friendly interface to input project prompts and view AI-generated outputs in real time.
